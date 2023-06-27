@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"log"
-	"microservicesgo/working/handlers"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"microservicesgo/working/handlers"
+
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -16,8 +19,20 @@ func main() {
 
 	ph := handlers.NewProducts(l)
 
-	sm := http.NewServeMux()
-	sm.Handle("/", ph)
+	sm := mux.NewRouter()
+
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ph.GetProducts)
+	sm.Handle("/products", ph)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", func(rw http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		idString := vars["id"]
+		_ = idString
+
+		ph.UpdateProducts(rw, r)
+	})
 
 	server := &http.Server{
 		Addr:         ":9090",

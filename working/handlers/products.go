@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 type Products struct {
@@ -53,13 +55,11 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		p.UpdateProducts(id, rw, r)
+		p.UpdateProducts(rw, r)
 		return
 	}
 
-	//handle an update
-
-	// Tangani semua kasus
+	// Tangani kasus lainnya
 
 	rw.WriteHeader(http.StatusMethodNotAllowed)
 }
@@ -80,30 +80,39 @@ func (p *Products) AddProduct(rw http.ResponseWriter, r *http.Request) {
 	err := prod.FromJSON(r.Body)
 	if err != nil {
 		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
+		return
 	}
 	p.l.Printf("Prod: %#v", prod)
 	data.AddProduct(prod)
 }
 
-func (p *Products) UpdateProducts(id int, rw http.ResponseWriter, r *http.Request) {
+func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	idString := vars["id"]
+	id, err := strconv.Atoi(idString)
+	if err != nil {
+		http.Error(rw, "Unable to convert id", http.StatusBadRequest)
+		return
+	}
 	p.l.Println("Handle PUT Product")
 
 	prod := &data.Product{}
-	err := prod.FromJSON(r.Body)
+	err = prod.FromJSON(r.Body)
 	if err != nil {
 		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
 		return
 	}
 
-	err = prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Product Not Found", http.StatusBadRequest)
-		return
-	}
+	// Lakukan logika update menggunakan parameter 'id'
 
-	err = prod.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Product Not Found", http.StatusBadRequest)
-		return
-	}
+	// Contoh kode:
+	// product, err := data.GetProductByID(id)
+	// if err != nil {
+	//     http.Error(rw, "Product Not Found", http.StatusNotFound)
+	//     return
+	// }
+	// product.Name = prod.Name
+	// product.Description = prod.Description
+	// err = data.UpdateProduct(product)
+	//
 }
